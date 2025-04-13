@@ -33,8 +33,6 @@ export default function HabitsPage() {
     setIsAddModalOpen(true);
   };
 
-  console.log('[HabitsPage] Habits state before map:', habits);
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
