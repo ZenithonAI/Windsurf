@@ -43,16 +43,11 @@ export function PriorityTasks() {
     setIsLoading(true);
 
     try {
-      // Calculate date range for the next 3 days
+      // Get today's date in ISO format (YYYY-MM-DD)
       const today = new Date();
-      // Set time to start of day in local timezone
-      today.setHours(0, 0, 0, 0);
-      
-      const threeDaysFromNow = new Date();
-      // Set to end of day 3 days from now in local timezone
-      threeDaysFromNow.setDate(today.getDate() + 3);
-      threeDaysFromNow.setHours(23, 59, 59, 999);
-      
+      today.setHours(0, 0, 0, 0); // Ensure we compare against the start of the day
+      const todayIso = today.toISOString().split('T')[0];
+
       // Use memoized supabase client
       const { data, error: dbError } = await supabaseClient
         .from('tasks')
@@ -60,24 +55,21 @@ export function PriorityTasks() {
         .eq('user_id', user.id)
         // Only get non-completed tasks
         .not('status', 'eq', 'completed')
-        // Only high priority tasks
-        .eq('priority', 'high')
-        // Only tasks due within the next 3 days
-        .gte('due_date', today.toISOString().split('T')[0]) // Use date-only comparison for better timezone handling
-        .lte('due_date', threeDaysFromNow.toISOString())
-        // Order by due date (closest first)
-        .order('due_date', { ascending: true })
-        .limit(4);
+        // Only tasks due exactly today
+        .eq('due_date', todayIso)
+        // Order by priority (high first) then by title
+        .order('priority', { ascending: false })
+        .order('title', { ascending: true });
 
       if (dbError) {
         throw dbError;
       }
 
-      // No need for complex sorting since we're filtering in the query
       setTasks(data || []);
 
     } catch (error) {
-      console.error("Error fetching priority tasks:", error);
+      console.error("Error fetching today's tasks:", error);
+      setError("Failed to load today's tasks.");
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +85,7 @@ export function PriorityTasks() {
     if (!user?.id) return;
     
     const subscription = supabaseClient
-      .channel('priority-tasks-changes')
+      .channel('todays-tasks-changes')
       .on(
         'postgres_changes', 
         { 
@@ -186,8 +178,8 @@ export function PriorityTasks() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-medium flex items-center">
-              <ListTodo className="mr-2 h-5 w-5 text-destructive" />
-              Priority Tasks
+              <ListTodo className="mr-2 h-5 w-5 text-blue-500" />
+              Today's Tasks
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -203,8 +195,8 @@ export function PriorityTasks() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium flex items-center">
-                <ListTodo className="mr-2 h-5 w-5 text-primary" />
-                Priority Tasks
+                <ListTodo className="mr-2 h-5 w-5 text-blue-500" />
+                Today's Tasks
               </CardTitle>
               <Link href="/tasks">
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -213,10 +205,14 @@ export function PriorityTasks() {
                 </Button>
               </Link>
             </div>
-            <CardDescription>High priority tasks due in the next 3 days</CardDescription>
+            <CardDescription>
+              Tasks due today that are not yet completed.
+            </CardDescription>
           </CardHeader>
           <CardContent className="pb-2">
-            <p className="text-sm text-muted-foreground text-center py-4">No priority tasks found.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No tasks due today, or all are completed. Well done!
+            </p>
           </CardContent>
           <CardFooter>
             <Link href="/tasks" className="w-full">
@@ -234,8 +230,8 @@ export function PriorityTasks() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-medium flex items-center">
-              <ListTodo className="mr-2 h-5 w-5 text-primary" />
-              Priority Tasks
+              <ListTodo className="mr-2 h-5 w-5 text-blue-500" />
+              Today's Tasks
             </CardTitle>
             <Link href="/tasks">
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -244,7 +240,9 @@ export function PriorityTasks() {
               </Button>
             </Link>
           </div>
-          <CardDescription>High priority tasks due in the next 3 days</CardDescription>
+          <CardDescription>
+            Tasks due today that are not yet completed.
+          </CardDescription>
         </CardHeader>
         <CardContent className="pb-2">
           <div className="space-y-4">

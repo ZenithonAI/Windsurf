@@ -23,6 +23,8 @@ import { UpcomingProjects } from "@/components/dashboard/upcoming-projects";
 import { FinancialOverview } from "@/components/dashboard/financial-overview";
 import { GoalProgress } from "@/components/dashboard/goal-progress";
 import { AIAssistant } from "@/components/dashboard/ai-assistant";
+import { HabitVisualization } from "@/components/dashboard/habit-visualization";
+import { QuickAdd } from "@/components/dashboard/quick-add";
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
@@ -57,6 +59,8 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <PriorityTasks />
         <HabitTracker />
+        <QuickAdd />
+        <HabitVisualization />
         <UpcomingProjects />
         <FinancialOverview />
         <GoalProgress />
